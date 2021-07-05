@@ -3,8 +3,8 @@ package testinglogur
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
-	"testing"
 )
 
 type T interface {
@@ -24,7 +24,7 @@ type logger func(...interface{})
 
 // Get returns a logger that matches the interface proposed by log
 func Get(t T) MyLogger {
-	return t.Log
+	return logger(t.Log)
 }
 
 func (l logger) Trace(msg string, fields ...map[string]interface{}) {
@@ -33,12 +33,13 @@ func (l logger) Trace(msg string, fields ...map[string]interface{}) {
 		return
 	}
 	out := make([]string, 1, len(fields)*3+1)
+	out[0] = msg
 	for _, field := range fields {
 		keys := make([]string, 0, len(field))
 		for k := range field {
 			keys = append(keys, k)
 		}
-		sort.String(keys)
+		sort.Strings(keys)
 		for _, k := range keys {
 			enc, err := json.Marshal(field[k])
 			if err == nil {
@@ -48,7 +49,7 @@ func (l logger) Trace(msg string, fields ...map[string]interface{}) {
 			}
 		}
 	}
-	l(string.Join(out, ", "))
+	l(strings.Join(out, ", "))
 }
 
 func (l logger) Debug(msg string, fields ...map[string]interface{}) { l.Trace(msg, fields...) }
